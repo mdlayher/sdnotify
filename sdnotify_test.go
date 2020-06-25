@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -177,6 +178,50 @@ STOPPING=1`
 
 	if diff := cmp.Diff(want, <-notifC); diff != "" {
 		t.Fatalf("unexpected notifications (-want +got):\n%s", diff)
+	}
+}
+
+// This example demonstrates typical use of a Notifier when starting a service,
+// indicating readiness, and shutting down the service.
+func ExampleNotifier() {
+	// Create a Notifier which will send notifications when running under
+	// systemd unit Type=notify, or will no-op otherwise if the NOTIFY_SOCKET
+	// environment variable is not set.
+	n, err := sdnotify.New()
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Fatalf("failed to open systemd notifier: %v", err)
+	}
+	// Clean up the notification socket when all done.
+	defer n.Close()
+
+	// Now that the Notifier is created, any further method calls will update
+	// systemd with the service's readiness state.
+	start := time.Now()
+	if err := n.Notify(sdnotify.Statusf("starting, waiting %s for readiness", 5*time.Second)); err != nil {
+		log.Fatalf("failed to send startup notification: %v", err)
+	}
+
+	// Do service initialization work, ex: go srv.Start() ...
+
+	// Indicate the service is now ready so 'systemctl start' and similar
+	// commands can unblock.
+	err = n.Notify(
+		sdnotify.Statusf("service started successfully in %s", time.Since(start)),
+		sdnotify.Ready,
+	)
+	if err != nil {
+		log.Fatalf("failed to send ready notification: %v", err)
+	}
+
+	// Wait for a signal or cancelation, ex: <-ctx.Done() ...
+
+	// Finally, indicate the service is shutting down.
+	err = n.Notify(
+		sdnotify.Statusf("received %s, shutting down", os.Interrupt),
+		sdnotify.Stopping,
+	)
+	if err != nil {
+		log.Fatalf("failed to send stopping notification: %v", err)
 	}
 }
 
