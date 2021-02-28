@@ -19,12 +19,12 @@ import (
 )
 
 func TestNotifierNotExist(t *testing.T) {
-	testIsNotExist(t, "open", func() (*sdnotify.Notifier, error) {
+	testIsNotExist(t, "open", func(t *testing.T) (*sdnotify.Notifier, error) {
 		// This path is very likely to not exist.
 		return sdnotify.Open("/not/exist")
 	})
 
-	testIsNotExist(t, "new", func() (*sdnotify.Notifier, error) {
+	testIsNotExist(t, "new", func(t *testing.T) (*sdnotify.Notifier, error) {
 		// This subtest needs an unset notify socket.
 		if s := os.Getenv(sdnotify.Socket); s != "" {
 			t.Skipf("skipping, notify socket set to %q", s)
@@ -34,9 +34,9 @@ func TestNotifierNotExist(t *testing.T) {
 	})
 }
 
-func testIsNotExist(t *testing.T, name string, fn func() (*sdnotify.Notifier, error)) {
+func testIsNotExist(t *testing.T, name string, fn func(t *testing.T) (*sdnotify.Notifier, error)) {
 	t.Run(name, func(t *testing.T) {
-		n, err := fn()
+		n, err := fn(t)
 		if !errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("expected is not exist, but got: %v", err)
 		}
