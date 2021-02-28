@@ -19,23 +19,37 @@ import (
 )
 
 func TestNotifierNotExist(t *testing.T) {
-	if s := os.Getenv(sdnotify.Socket); s != "" {
-		t.Skipf("skipping, notify socket set to %q", s)
-	}
+	testIsNotExist(t, "open", func() (*sdnotify.Notifier, error) {
+		// This path is very likely to not exist.
+		return sdnotify.Open("/not/exist")
+	})
 
-	n, err := sdnotify.New()
-	if !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("expected is not exist, but got: %v", err)
-	}
+	testIsNotExist(t, "new", func() (*sdnotify.Notifier, error) {
+		// This subtest needs an unset notify socket.
+		if s := os.Getenv(sdnotify.Socket); s != "" {
+			t.Skipf("skipping, notify socket set to %q", s)
+		}
 
-	// None of these operations should error or panic even though the Notifier
-	// is nil.
-	if err := n.Notify("noop"); err != nil {
-		t.Fatalf("failed to noop notify: %v", err)
-	}
-	if err := n.Close(); err != nil {
-		t.Fatalf("failed to noop close: %v", err)
-	}
+		return sdnotify.New()
+	})
+}
+
+func testIsNotExist(t *testing.T, name string, fn func() (*sdnotify.Notifier, error)) {
+	t.Run(name, func(t *testing.T) {
+		n, err := fn()
+		if !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("expected is not exist, but got: %v", err)
+		}
+
+		// None of these operations should error or panic even though the Notifier
+		// is nil.
+		if err := n.Notify("noop"); err != nil {
+			t.Fatalf("failed to noop notify: %v", err)
+		}
+		if err := n.Close(); err != nil {
+			t.Fatalf("failed to noop close: %v", err)
+		}
+	})
 }
 
 func TestNotifierEcho(t *testing.T) {

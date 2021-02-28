@@ -38,7 +38,13 @@ type Notifier struct {
 // New creates a Notifier which sends notifications to the UNIX socket specified
 // by the NOTIFY_SOCKET environment variable. See Open for more details.
 func New() (*Notifier, error) {
-	return Open(os.Getenv(Socket))
+	s := os.Getenv(Socket)
+	if s == "" {
+		// Don't bother stat'ing an empty socket, just return now.
+		return nil, os.ErrNotExist
+	}
+
+	return Open(s)
 }
 
 // Open creates a Notifier which sends notifications to the UNIX socket
