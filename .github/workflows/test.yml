@@ -1,4 +1,4 @@
-name: Static Analysis
+name: Test
 
 on:
   push:
@@ -11,9 +11,11 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         go-version: [1.18]
-    runs-on: ubuntu-latest
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Set up Go
@@ -25,14 +27,7 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    - name: Install staticcheck
-      run: go install honnef.co/go/tools/cmd/staticcheck@latest
-
-    - name: Print staticcheck version
-      run: staticcheck -version
-
-    - name: Run staticcheck
-      run: staticcheck ./...
-
-    - name: Run go vet
-      run: go vet ./...
+    # Run basic tests, we just want to make sure there is parity on Linux and
+    # macOS.
+    - name: Run tests
+      run: go test ./...

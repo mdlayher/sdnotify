@@ -31,9 +31,7 @@ func Statusf(format string, v ...interface{}) string {
 // called on a nil Notifier will result in a no-op, allowing graceful
 // functionality degradation when a Go program is not running under systemd
 // supervision.
-type Notifier struct {
-	wc io.WriteCloser
-}
+type Notifier struct{ wc io.WriteCloser }
 
 // New creates a Notifier which sends notifications to the UNIX socket specified
 // by the NOTIFY_SOCKET environment variable. See Open for more details.
