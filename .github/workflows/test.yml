@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         go-version: [1.18]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -27,7 +27,5 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
-    # Run basic tests, we just want to make sure there is parity on Linux and
-    # macOS.
     - name: Run tests
       run: go test ./...
